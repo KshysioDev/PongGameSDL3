@@ -27,8 +27,6 @@
 // Some Defines
 //----------------------------------------------------------------------------------
 #define PLAYER_MAX_LIFE 5
-#define LINES_OF_BRICKS 5
-#define BRICKS_PER_LINE 20
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -49,8 +47,8 @@ typedef struct Ball {
 //------------------------------------------------------------------------------------
 // Global Variables Declaration
 //------------------------------------------------------------------------------------
-static const int screenWidth = 800;
-static const int screenHeight = 450;
+static const int screenWidth = 1920;
+static const int screenHeight = 1080;
 
 static bool gameOver = false;
 static bool pause = false;
@@ -68,20 +66,21 @@ static void DrawGame(void);        // Draw game (one frame)
 static void UnloadGame(void);      // Unload game
 static void UpdateDrawFrame(void); // Update and Draw (one frame)
 
+Sound fxPong;
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
 int main(void) {
   // Initialization (Note windowTitle is unused on Android)
   //---------------------------------------------------------
-  InitWindow(screenWidth, screenHeight, "classic game: arkanoid");
+  InitWindow(screenWidth, screenHeight, "Pong");
 
   InitGame();
 
 #if defined(PLATFORM_WEB)
   emscripten_set_main_loop(UpdateDrawFrame, 60, 1);
 #else
-  SetTargetFPS(60);
+  SetTargetFPS(75);
   //--------------------------------------------------------------------------------------
 
   // Main game loop
@@ -126,6 +125,8 @@ void InitGame(void) {
   ball.speed = (Vector2){0, 0};
   ball.radius = 7;
   ball.active = false;
+
+  fxPong = LoadSound("resources/wooden-click.wav");
 }
 
 // Update game (one frame)
@@ -191,6 +192,7 @@ void UpdateGame(void) {
                           player1.position.y - player1.size.y / 2,
                           player1.size.x, player1.size.y})) {
         if (ball.speed.x > 0) {
+          PlaySound(fxPong);
           ball.speed.x *= -1;
           ball.speed.y =
               (ball.position.y - player1.position.y) / (player1.size.y / 2) * 5;
@@ -203,6 +205,7 @@ void UpdateGame(void) {
                           player2.position.y - player2.size.y / 2,
                           player2.size.x, player2.size.y})) {
         if (ball.speed.x < 0) {
+          PlaySound(fxPong);
           ball.speed.x *= -1;
           ball.speed.y =
               (ball.position.y - player2.position.y) / (player2.size.y / 2) * 5;
