@@ -26,7 +26,6 @@
 //----------------------------------------------------------------------------------
 // Some Defines
 //----------------------------------------------------------------------------------
-#define PLAYER_MAX_LIFE 5
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -34,7 +33,8 @@
 typedef struct Player {
   Vector2 position;
   Vector2 size;
-  int life;
+  Color color;
+  int id;
 } Player;
 
 typedef struct Ball {
@@ -66,7 +66,6 @@ static void DrawGame(void);        // Draw game (one frame)
 static void UnloadGame(void);      // Unload game
 static void UpdateDrawFrame(void); // Update and Draw (one frame)
 
-Sound fxPong;
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -106,27 +105,40 @@ int main(void) {
 // Module Functions Definitions (local)
 //------------------------------------------------------------------------------------
 
+void DrawPlayer(Player p) {
+  DrawRectangle(p.position.x - p.size.x / 2, p.position.y - p.size.y / 2,
+                p.size.x, p.size.y, p.color);
+}
+
+void InitializeBall(Player p) {
+  printf("sigma");
+  ball.position =
+      (Vector2){p.position.x - p.size.x / 2 - ball.radius, p.position.y};
+}
+
 // Initialize game variables
 void InitGame(void) {
 
   // Initialize player
   player1.position = (Vector2){screenWidth * 12 / 13, screenHeight / 2};
   player1.size = (Vector2){20, screenHeight / 5};
-  player1.life = PLAYER_MAX_LIFE;
+  player1.color = WHITE;
+  player1.id = 1;
 
   player2.position = (Vector2){screenWidth / 13, screenHeight / 2};
   player2.size = (Vector2){20, screenHeight / 5};
-  player2.life = PLAYER_MAX_LIFE;
+  player2.color = WHITE;
+  player2.id = 2;
 
   // Initialize ball
-  ball.position =
-      (Vector2){player1.position.x - player1.size.x / 2 - ball.radius,
-                player1.position.y};
+  if (GetRandomValue(0, 1) == 0) {
+    InitializeBall(player1);
+  } else {
+    InitializeBall(player2);
+  }
   ball.speed = (Vector2){0, 0};
-  ball.radius = 7;
+  ball.radius = 16;
   ball.active = false;
-
-  fxPong = LoadSound("resources/wooden-click.wav");
 }
 
 // Update game (one frame)
@@ -159,7 +171,7 @@ void UpdateGame(void) {
       if (!ball.active) {
         if (IsKeyPressed(KEY_SPACE)) {
           ball.active = true;
-          ball.speed = (Vector2){-5, 0};
+          ball.speed = (Vector2){-32, 0};
         }
       }
 
@@ -168,9 +180,11 @@ void UpdateGame(void) {
         ball.position.x += ball.speed.x;
         ball.position.y += ball.speed.y;
       } else {
-        ball.position =
-            (Vector2){player1.position.x - player1.size.x / 2 - ball.radius,
-                      player1.position.y};
+        if (GetRandomValue(0, 1) == 0) {
+          InitializeBall(player1);
+        } else {
+          InitializeBall(player2);
+        }
       }
 
       // Collision logic: ball vs walls
@@ -178,11 +192,10 @@ void UpdateGame(void) {
           ((ball.position.y + ball.radius) >= screenHeight)) {
         ball.speed.y *= -1;
       }
-      if ((ball.position.x + ball.radius) >= screenWidth) {
+      if (((ball.position.x + ball.radius) >= screenWidth) ||
+          ((ball.position.x - ball.radius) <= 0)) {
         ball.speed = (Vector2){0, 0};
         ball.active = false;
-
-        player1.life--;
       }
 
       // Collision logic: ball vs player
@@ -192,7 +205,6 @@ void UpdateGame(void) {
                           player1.position.y - player1.size.y / 2,
                           player1.size.x, player1.size.y})) {
         if (ball.speed.x > 0) {
-          PlaySound(fxPong);
           ball.speed.x *= -1;
           ball.speed.y =
               (ball.position.y - player1.position.y) / (player1.size.y / 2) * 5;
@@ -205,7 +217,6 @@ void UpdateGame(void) {
                           player2.position.y - player2.size.y / 2,
                           player2.size.x, player2.size.y})) {
         if (ball.speed.x < 0) {
-          PlaySound(fxPong);
           ball.speed.x *= -1;
           ball.speed.y =
               (ball.position.y - player2.position.y) / (player2.size.y / 2) * 5;
@@ -228,18 +239,8 @@ void DrawGame(void) {
 
   if (!gameOver) {
     // Draw player bar
-    DrawRectangle(player1.position.x - player1.size.x / 2,
-                  player1.position.y - player1.size.y / 2, player1.size.x,
-                  player1.size.y, WHITE);
-
-    DrawRectangle(player2.position.x - player2.size.x / 2,
-                  player2.position.y - player2.size.y / 2, player2.size.x,
-                  player1.size.y, WHITE);
-
-    // Draw player lives
-    for (int i = 0; i < player1.life; i++)
-      DrawRectangle(20 + 40 * i, screenHeight - 30, 35, 10, LIGHTGRAY);
-
+    DrawPlayer(player1);
+    DrawPlayer(player2);
     // Draw ball
     DrawCircleV(ball.position, ball.radius, MAROON);
 
